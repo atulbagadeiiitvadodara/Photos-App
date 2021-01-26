@@ -1,9 +1,13 @@
-
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const multer  = require('multer');
+const GridFsStorage = require('multer-gridfs-storage');
+const Grid = require('gridfs-stream');
+const methodOverride = require('method-override');
 const upload = multer();
 const User = require('./models/users');
+const Upload = require('./models/uploads');
 
 const bodyParser = require('body-parser');
 
@@ -18,12 +22,61 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 const jsonParser = bodyParser.json();
 
-mongoose.connect('mongodb+srv://rushi:431714@cluster0.jcpwl.mongodb.net/hmletbackend?retryWrites=true&w=majority', {
+// query stream in order to make a delete req
+app.use(methodOverride('_method'));
+
+// Mongo URI
+const mongoURI = 'mongodb+srv://rushi:431714@cluster0.jcpwl.mongodb.net/hmletbackend?retryWrites=true&w=majority';
+// Initialize gfs
+let gfs;
+
+var conn = mongoose.createConnection('mongodb+srv://rushi:431714@cluster0.jcpwl.mongodb.net/hmletbackend?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true
-}).then(() => {
-    console.log("connected");
 });
+
+conn.once('open', () => {
+    // Initializing stream
+    gfs = Grid(conn.db, mongoose.mongo);
+    gfs.collection('uploads');
+});
+
+// create storage engine
+
+const storage = new GridFsStorage({
+    url: mongoURI,
+    file: (req, file) => {
+      return new Promise((resolve, reject) => {
+        crypto.randomBytes(16, (err, buf) => {
+          if (err) {
+            return reject(err);
+          }
+          const filename = buf.toString('hex') + path.extname(file.originalname);
+          const fileInfo = {
+            filename: filename,
+            bucketName: 'uploads'
+          };
+          resolve(fileInfo);
+        });
+      });
+    }
+});
+const uploads = multer({ storage });
+
+// @route POST /upload
+// @desc Upload img to DB
+app.post('/upload', uploads.single('file'), (req, res) => {
+
+    // const data = new Upload({
+    //     _id:mongoose.Types.ObjectId(),
+    //     name: req.body.name,
+    //     caption: req.body.caption
+    // });
+
+    // data.save();
+
+    res.json({file: req.file});
+})
 
 app.post('/register', upload.none(), function(req, res){
     
