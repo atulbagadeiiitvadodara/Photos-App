@@ -1,10 +1,11 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
+const multer  = require('multer');
+const upload = multer();
 const User = require('./models/users');
 
 const bodyParser = require('body-parser');
-const jsonParser = bodyParser.json();
 
 const crypto = require('crypto');
 const key = crypto.randomBytes(32); 
@@ -14,6 +15,8 @@ const jwt = require('jsonwebtoken');
 const jwtKey = "jwt";
 
 const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+const jsonParser = bodyParser.json();
 
 mongoose.connect('mongodb+srv://rushi:431714@cluster0.jcpwl.mongodb.net/hmletbackend?retryWrites=true&w=majority', {
     useNewUrlParser: true,
@@ -22,11 +25,7 @@ mongoose.connect('mongodb+srv://rushi:431714@cluster0.jcpwl.mongodb.net/hmletbac
     console.log("connected");
 });
 
-app.get("/", function(req, res){
-    res.end("hello");
-});
-
-app.post('/register', jsonParser, function(req, res){
+app.post('/register', upload.none(), function(req, res){
     
     var cipher = crypto.createCipher(algo, key);
     var encrypted = cipher.update(req.body.password, 'utf8', 'hex')+cipher.final('hex');
@@ -43,14 +42,14 @@ app.post('/register', jsonParser, function(req, res){
     data.save().then((result) => {
         //res.status(201).json(result)
         jwt.sign({result}, jwtKey, {expiresIn: '600s'}, (err, token) => {
-            res.status(201).json({token})
+            res.status(201).json({token});
         })
     })
     .catch((err) => console.log(err));
 
 });
 
-app.post('/login', jsonParser, function(req, res){
+app.post('/login', upload.none(), function(req, res){
     User.findOne({email:req.body.email}).then((data) => {
         var decipher = crypto.createDecipher(algo, key);
         var decrypted = decipher.update(data.password, 'hex', 'utf8')+decipher.final('utf8');
