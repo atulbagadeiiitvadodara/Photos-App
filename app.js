@@ -126,6 +126,7 @@ app.post("/upload", verifyToken, upload.single("image"), function (req, res) {
 app.post("/post/:id", verifyToken, function (req, res) {
   var id = req.params.id;
   var nowDate = new Date();
+  var flag = true;
   var date =
     nowDate.getFullYear() +
     "/" +
@@ -133,10 +134,18 @@ app.post("/post/:id", verifyToken, function (req, res) {
     "/" +
     nowDate.getDate();
 
+  if(id.length == 24){
   Draft.findById(id, (err, result) => {
     if (err) {
       res.json(err);
     } else {
+      if(result == null){
+        return res.json({
+          err:
+            "ID did not match with the records! Please check again!!",
+        });
+      }
+      else{
       const data = new Image({
         _id: mongoose.Types.ObjectId(),
         username: result.username,
@@ -145,6 +154,7 @@ app.post("/post/:id", verifyToken, function (req, res) {
         uploadedDate: date,
       });
       data.save();
+      }
     }
   });
 
@@ -155,6 +165,13 @@ app.post("/post/:id", verifyToken, function (req, res) {
       res.json(result);
     }
   });
+  }
+  else{
+    res.json({
+      err:
+        "Invalid ID parameter! Please check again!!",
+    });
+  }
 });
 
 // @route GET all posted images
@@ -194,11 +211,19 @@ app.patch("/images/:id", verifyToken, function (req, res) {
   var id = req.params.id;
   var name = "";
 
+  if(id.length == 24){
   Image.findOne({ _id: id }, (err, result) => {
     if (err) {
       res.json(err);
     } else {
-      name = result.username;
+      if(result == null){
+        return res.json({
+          err:
+            "ID did not match with the records! Please check again!!",
+        });
+      }
+      else
+        name = result.username;
     }
   }).then(() => {
     if (config.app.loggedInUserName == name) {
@@ -221,6 +246,13 @@ app.patch("/images/:id", verifyToken, function (req, res) {
       });
     }
   });
+  }
+  else{
+    res.json({
+      err:
+        "Invalid ID parameter! Please check again!!",
+    });
+  }
 });
 
 // @route DELETE Photo
@@ -229,11 +261,19 @@ app.delete("/images/:id", verifyToken, function (req, res) {
   var id = req.params.id;
   var name = "";
 
+  if(id.length == 24){
   Image.findOne({ _id: id }, (err, result) => {
     if (err) {
       res.json(err);
     } else {
-      name = result.username;
+      if(result == null){
+        return res.json({
+          err:
+            "ID did not match with the records! Please check again!!",
+        });
+      }
+      else
+        name = result.username;
     }
   }).then(() => {
     if (config.app.loggedInUserName == name) {
@@ -251,6 +291,13 @@ app.delete("/images/:id", verifyToken, function (req, res) {
       });
     }
   });
+  }
+  else{
+    res.json({
+      err:
+        "Invalid ID parameter! Please check again!!",
+    });
+  }
 });
 
 // @route DELETE Photo
@@ -259,11 +306,19 @@ app.delete("/draft/:id", verifyToken, function (req, res) {
   var id = req.params.id;
   var name = "";
 
+  if(id.length == 24){
   Draft.findOne({ _id: id }, (err, result) => {
     if (err) {
       res.json(err);
     } else {
-      name = result.username;
+     if(result == null){
+        return res.json({
+          err:
+            "ID did not match with the records! Please check again!!",
+        });
+      }
+      else
+        name = result.username;
     }
   }).then(() => {
     if (config.app.loggedInUserName == name) {
@@ -281,6 +336,13 @@ app.delete("/draft/:id", verifyToken, function (req, res) {
       });
     }
   });
+  }
+  else{
+    res.json({
+      err:
+        "Invalid ID parameter! Please check again!!",
+    });
+  }
 });
 
 // @route DELETE Photos
@@ -336,7 +398,7 @@ app.get("/images/sort/:order", function (req, res) {
 });
 
 // @route GET all users
-// @desc route for testing purpose (not mentioned in assignment)
+// @desc route for testing purpose (not mentioned as a requirement)
 app.get("/users", verifyToken, function (req, res) {
   User.find().then((result) => {
     res.status(200).json(result);
